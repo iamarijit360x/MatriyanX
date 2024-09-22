@@ -2,7 +2,9 @@
 from flask import g
 import sqlitecloud
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 def get_db():
     """Establish and return a database connection, stored in the Flask app context."""
     if 'db' not in g:

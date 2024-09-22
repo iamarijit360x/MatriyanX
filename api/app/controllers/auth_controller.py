@@ -3,72 +3,55 @@ from flask import jsonify, request
 from ..validators import validate_user_data
 import sqlitecloud
 from app.database import get_db,close_db
-from ..middlewares.auth_check import generate_token,token_check
+from ..services.user_service import userService
+from ..services.auth_service import AuthService
 
 
 
+
+
+auth_service=AuthService()
 def create_user():
-    # Logic to create a new user
-    data = request.get_json()
-    # Validate the user data
-    error = validate_user_data(data)
+    data = request.get_json() #get user data from the request body
+    error = validate_user_data(data) #Check if data is valid or not
     if error:
-        return jsonify(error), 400
-
-    db  = get_db()
+        obj={'error':error,'message':'Invaid Email/Password'}
+        return jsonify(obj), 400
     try:
-        # Attempt to insert a new user
-        db.execute('''
-            INSERT INTO users (username, email, password_hash)
-            VALUES (?, ?, ?)
-        ''', (data['username'], data['email'], data['password']))
-        db.commit()
-    except sqlitecloud.IntegrityError as e:
-       
-        db.rollback()
-        return jsonify({'error': 'Username already exists'}), 400
-         
-    except sqlitecloud.Error as e:
-       
-        db.rollback()
-      
-        return jsonify({'error':e}), 401
-    finally:
-        close_db(db)
+         auth_service.create_user(data)
+    except ValueError as e:
+         return jsonify({'message':str(e)}), 409
+    except Exception as e:
+        return jsonify({'error': 'An unexpected error occurred', 'message': str(e)}), 500
+
 
     return jsonify({"message": "User created successfully", "user": data}), 201
 
 def signin():
-    """Route to generate a JWT token after successful login."""
-    data = request.get_json()
-    # Example user authentication (in real applications, validate user credentials)
+
+    data = request.get_json() #get user data from the request body
     email = data.get('email')
     password=data.get('password')
 
     if(not(email) or not(password)):
-        return jsonify({'error': 'User ID is required!'}), 400
-    db = get_db()
-
+        return jsonify({'error': 'User Email and Password are required!'}), 400
     try:
-        result=db.execute('''
-            SELECT * FROM users WHERE email = ? AND password_hash = ?
-        ''', (email, password))
-        user = result.fetchone()
+        user_service=userService()
         
-        if user is None:
-            return jsonify({'error': 'Invalid email or password'}), 401
+        user=user_service.get_user(email,password)
+        if(not(user)):
+              return jsonify({'message':'Invalid Credentials'}), 401
 
-        # Generate JWT token
-        token = generate_token(email)
-        return jsonify({'token': token}), 200
+        auth_service.generate_set_access_token(user)
+
+        access_token = auth_service.generate_token(user)
+        return jsonify({'token': access_token}), 200
         
-    except sqlitecloud.Error as e:
-        return jsonify({'error': str(e)}), 500
-    finally:
-        close_db(db)
+    except Exception as error:
+            print(error)  
+            return jsonify({'message': "Internal Server Error",error:str(error)}), 500
 
-
-@token_check
+@auth_service.token_check
 def protected():
     """Protected route that requires a valid JWT."""
     return jsonify({'message': 'This is a protected route!'})
