@@ -15,7 +15,7 @@
                 OR
 5.`pip install -r requirements.txt` to install dependencies from requirement.txt
 
-6. run app `flask run`
+6. run app `flask run --debug`
 
 
 

@@ -23,15 +23,18 @@ class AuthService:
             raise Exception(str(e)) 
         finally:
             close_db(db)
-    def generate_set_access_token(self,user):
+   
+    def generate_set_refresh_token(self,user):
         db=get_db()
         refresh_token=self.generate_token(user,720*60*60)
         result = db.execute('''
             UPDATE users SET refresh_token = ? WHERE email = ?
         ''', (refresh_token, user['email']))
         close_db(db)
+        return refresh_token
 
-    def generate_token(self,user_obj,exp_hours=20):
+   
+    def generate_token(self,user_obj,exp_hours=60*60):
         """Generate a JWT token."""
         token = jwt.encode({
             'id':user_obj['id'],
@@ -39,6 +42,7 @@ class AuthService:
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=exp_hours)  # Token expires in 1 hour
         }, os.getenv('SECRET_KEY'), algorithm='HS256')
         return token
+    
     def decode_token(self,token):
         """Decode a JWT token."""
         try:
@@ -53,7 +57,7 @@ class AuthService:
         """Decorator to protect routes with JWT authentication."""  
         @wraps(f)
         def decorated(*args, **kwargs):
-            token = request.headers.get('Authorization_Refresh')
+            token = request.headers.get('Authorization')
             if not token:
                 return jsonify({'error': 'Token is missing!'}), 403
             try:
@@ -71,6 +75,7 @@ class AuthService:
     #TODO CREATE FUNCTION TO HASH AND VERIFY PASSWORD
     def hash_password(self):
         pass
+    
     def verify_passwod(self):
         pass
 
