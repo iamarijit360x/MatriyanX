@@ -6,7 +6,7 @@ from ..services.auth_service import AuthService
 auth_service=AuthService()
 
 @auth_service.token_check
-def protected():
+def protected(user ):
     """Protected route that requires a valid JWT."""
-    return jsonify({'message': 'This is a protected route!'})
+    return jsonify(user)
 

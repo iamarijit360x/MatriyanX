@@ -34,7 +34,7 @@ class AuthService:
         return refresh_token
 
    
-    def generate_token(self,user_obj,exp_hours=60*60):
+    def generate_token(self,user_obj,exp_hours=60*60*60*60):
         """Generate a JWT token."""
         token = jwt.encode({
             'id':user_obj['id'],
@@ -61,15 +61,14 @@ class AuthService:
             if not token:
                 return jsonify({'error': 'Token is missing!'}), 403
             try:
-                decoded = self.decode_token(token)
-                print(decoded)
-                if 'error' in decoded:
+                user = self.decode_token(token)
+                if 'error' in user:
 
-                    return jsonify(decoded), 403
+                    return jsonify(user), 403
 
             except Exception as e:
                 return jsonify({'error': str(e)}), 403
-            return f(*args, **kwargs)
+            return f(user,*args, **kwargs)
         return decorated
 
     #TODO CREATE FUNCTION TO HASH AND VERIFY PASSWORD

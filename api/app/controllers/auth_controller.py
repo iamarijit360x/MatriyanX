@@ -64,7 +64,8 @@ def token_refresh():
             return jsonify({'message': "Invalid Token",error:str(error)}), 403
 
 @auth_service.token_check
-def protected():
+def protected(user):
     """Protected route that requires a valid JWT."""
-    return jsonify({'message': 'This is a protected route!'})
+    print(user)
+    return jsonify(user)
 
