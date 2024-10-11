@@ -1,11 +1,7 @@
 from flask import request, jsonify
-import jwt
-import datetime
 from functools import wraps
-import os
 import sqlitecloud
 from app.database import get_db,close_db
-import uuid
 from ..utils.utility import generate_patient_id
 
 class PatientService:
@@ -28,19 +24,23 @@ class PatientService:
                     data["amount"],  # amount
                     user_id  # user_id
                 )
-                for data in data_list
+                for data in data_list['patients']
             ]
 
             # Print each entry being inserted for verification
-            for entry in entries_to_insert:
-                print(f"Inserting patient: {entry}")
+
 
             # Perform the bulk insertion using executemany
             db.executemany('''
                 INSERT INTO Patients (patient_id, serial_no, time_group, name, village, district, voucher_number, voucher_type, distance, date, amount, user_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', entries_to_insert)
-
+            db.execute('''
+            UPDATE Summary
+            SET total_amount = ?, distance = ?
+            WHERE user_id = ? AND time_group = ?
+        ''', (data_list['total_amount'], data_list['total_distance'], user_id, data_list['time_group']))
+            
             db.commit()  # Commit after inserting all entries
 
         except sqlitecloud.IntegrityError as e:

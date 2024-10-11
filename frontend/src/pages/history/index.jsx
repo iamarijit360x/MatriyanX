@@ -3,8 +3,10 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import DashboardCards from './DashboardCards';
+import { useAuth } from 'middlewares/authContext';
 
 export default function History() {
+  
   return (
       <Box
         sx={{

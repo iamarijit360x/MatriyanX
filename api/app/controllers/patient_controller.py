@@ -12,7 +12,7 @@ patient_service=PatientService()
 def create_patient(user):
     data=request.get_json()
    
-    error = validate_patient_data(data) #Check if data is valid or not
+    error = validate_patient_data(data['patients']) #Check if data is valid or not
     if error:
         obj={'error':error,'message':'Please Enter Valid Data'}
         return jsonify(str(obj)), 400
