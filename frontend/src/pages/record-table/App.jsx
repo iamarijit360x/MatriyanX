@@ -13,6 +13,8 @@ import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
 import MonthYearPopup from './CreateRecord';
+import { createPatient, getAllPatients } from 'actions/patientActions';
+import axiosInstance from 'middlewares/axiosConfig';
 
 const defaultRow = {
   serial_no: '1',
@@ -31,21 +33,12 @@ export default function TableRecords({timegroup}) {
   const [errors, setErrors] = useState(Array(rows.length).fill({}));
   const [error, setError] = useState(false);
   const totalAmount = rows.reduce((total, row) => total + parseFloat(row.amount) || 0, 0);
-  // useEffect(() => {
-  //   axios.get('http://localhost:5000/patient?time_group=Morning', {
-  //     headers: {
-  //       'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJhYmNAZ21haWwuY29tIiwiZXhwIjoxNzQxMDc2NDQxfQ.C_bIIkEZAoeoFZp-14VWQ8eKDeCEaPmOHVcrm8Dbb7E', // Replace with your actual token
-  //       'Content-Type': 'application/json',
-  //     },
-  //   })
-  //   .then((response) => {
-  //     console.log(response.data);
-  //     setRows(response.data)
-  //   })
-  //   .catch((error) => {
-  //     console.error('Error fetching data:', error);
-  //   });
-  // }, []);
+  const totalDistance= rows.reduce((total, row) => total + parseFloat(row.distance) || 0, 0);
+
+  useEffect(() => {
+    if(timegroup)
+    getAllPatients(timegroup).then(data=>{setRows(data)})
+  }, []);
   
   const calculateAmount = (distance) => {
     let amount = 0;
@@ -91,10 +84,11 @@ export default function TableRecords({timegroup}) {
     setRows(newRows);
   };
 
-  const handleAddRow = () => {
-    const newSerialNo = rows.length > 0 ? Math.max(...rows.map(row => row.serial_no)) + 1 : 1;
-    setRows([...rows, { ...defaultRow, serial_no: newSerialNo, isEditing: true }]);
-  };
+const handleAddRow = () => {
+  const newSerialNo = rows.length > 0 ? Math.max(...rows.map(row => row.serial_no)) + 1 : 1;
+  const newVoucherNumber = rows.length > 0 ? Math.max(...rows.map(row => parseInt(row.voucher_number, 10))) + 1 : 1;
+  setRows([...rows, { ...defaultRow, serial_no: newSerialNo, voucher_number: newVoucherNumber, isEditing: true }]);
+};
 
   const handleDeleteRow = (index) => {
     setRows(rows.filter((_, i) => i !== index));
@@ -108,27 +102,34 @@ export default function TableRecords({timegroup}) {
   const handleSaveRow = (index) => {
     const row = rows[index];
     const newErrors = { ...errors[index] };
+  
+    // Validation and conversion
     Object.keys(defaultRow).forEach(key => {
       if (row[key] === '' || (key === 'date' && row[key] === null)) {
         newErrors[key] = true;
         setError(true);
       } else {
         newErrors[key] = false;
+  
+        // Convert distance, voucher_number, and amount to integers
+        if (['distance', 'voucher_number', 'amount','serial_no'].includes(key)) {
+          row[key] = parseInt(row[key], 10);
+        }
       }
     });
-
+  
     const updatedErrors = [...errors];
     updatedErrors[index] = newErrors;
     setErrors(updatedErrors);
-
+  
     if (Object.values(newErrors).every(err => !err)) {
       setError(false);
       const newRows = rows.map((row, i) => (i === index ? { ...row, isEditing: false } : row));
       setRows(newRows);
     }
   };
-
-  const handleSaveAll = () => {
+  
+  const handleSaveAll = async () => {
     rows.forEach((_, index) => {
       handleSaveRow(index);
     });
@@ -138,7 +139,8 @@ export default function TableRecords({timegroup}) {
     }
     
     const data=rows.filter(row=>!row.patient_id);
-    console.log({patients:data,timegroup})
+    if(data.length)
+      await createPatient({patients:data,timegroup,total_amount:totalAmount,total_distance:totalDistance})
   };
 
   const villageOptions = ['Village A', 'Village B', 'Village C', 'Village D'];

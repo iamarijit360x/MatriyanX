@@ -17,8 +17,7 @@ export const createSummary = async (time_group) => {
 export const getAllSummaris = async () => {
     try {
       const response = await axiosInstance.get(apiUrl+'/summary');
-      console.log(response.data.data)
-      return { message:response.data.message,status:response.status };
+      return response.data.data;
    
     } catch (error) {
       console.error('An error occurred during signup:', error);

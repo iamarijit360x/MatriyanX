@@ -17,7 +17,7 @@ def create_patient(user):
         obj={'error':error,'message':'Please Enter Valid Data'}
         return jsonify(str(obj)), 400
 
-    patient_service.create_patients(data,user['id'])
+    patient_service.create_patients(data,data['timegroup'],user['id'])
     return jsonify({'status':'ok'}),200
 
 @auth_service.token_check

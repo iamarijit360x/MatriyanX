@@ -5,7 +5,7 @@ from app.database import get_db,close_db
 from ..utils.utility import generate_patient_id
 
 class PatientService:
-    def create_patients(self, data_list, user_id):
+    def create_patients(self, data_list, time_group,user_id):
         db = get_db()
         try:
             # Prepare the data for bulk insertion
@@ -13,7 +13,7 @@ class PatientService:
                 (
                     generate_patient_id([  data["name"],data["village"],data["date"],data["voucher_number"] ]), 
                     data["serial_no"],  # serial_no
-                    data["time_group"],  # time_group
+                    time_group,  # time_group
                     data["name"],  # name
                     data["village"],  # village
                     data["district"],  # district
@@ -35,11 +35,11 @@ class PatientService:
                 INSERT INTO Patients (patient_id, serial_no, time_group, name, village, district, voucher_number, voucher_type, distance, date, amount, user_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', entries_to_insert)
-            db.execute('''
-            UPDATE Summary
-            SET total_amount = ?, distance = ?
-            WHERE user_id = ? AND time_group = ?
-        ''', (data_list['total_amount'], data_list['total_distance'], user_id, data_list['time_group']))
+        #     db.execute('''
+        #     UPDATE Summary
+        #     SET total_amount = ?, distance = ?
+        #     WHERE user_id = ? AND time_group = ?
+        # ''', (data_list['total_amount'], data_list['total_distance'], user_id, data_list['time_group']))
             
             db.commit()  # Commit after inserting all entries
 

@@ -31,13 +31,7 @@ const utilities = {
       url: '/account',
       icon: icons.FontSizeOutlined
     },
-    {
-      id: 'util-color',
-      title: 'Current Record',
-      type: 'item',
-      url: '/records',
-      icon: icons.BgColorsOutlined
-    },
+
     {
       id: 'util-shadow',
       title: 'History',

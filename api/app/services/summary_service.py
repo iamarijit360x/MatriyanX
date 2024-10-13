@@ -46,21 +46,26 @@ class SummaryService:
         db = get_db()
         try:
             # Query to fetch all summaries where user_id matches the given one
-            summaries = db.execute('''
+            cursor = db.execute('''
                 SELECT * FROM SUMMARY WHERE user_id = ?
-            ''', (user_id,)).fetchall()
-            
+            ''', (user_id,))
+
+
+            summaries=cursor.fetchall()
+            # Get column names from the cursor
+            print(cursor)
+            columns = [column[0] for column in cursor.description]
+
             # Convert the result to a list of dictionaries for easier handling
-            summary_list = [
-                dict(row) for row in summaries
-            ]
-            print(summary_list)
+            summary_list = [dict(zip(columns, row)) for row in summaries]
+
             return summary_list
 
         except sqlitecloud.Error as e:
             raise Exception(f"Database error: {e}")
         finally:
             close_db(db)
+
     def get_summary(self, time_group,user_id):
         db = get_db()
         print(time_group,user_id)

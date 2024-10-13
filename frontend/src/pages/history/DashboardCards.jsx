@@ -7,68 +7,54 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Grid';
 import { getAllSummaris } from 'actions/summaryActions';
-
-
+import router from 'routes';
+import { useNavigate } from 'react-router-dom';
 
 export default function DashboardCards() {
-  const [data,setData] = useState([
-    {
-      id: 1,
-      yearMonth: '2024-10',
-      totalPatients: 120,
-      totalAmount: '$12,000',
-      totalDistance: '150 km',
-      status: 'Completed'
-    },
-    {
-      id: 2,
-      yearMonth: '2024-09',
-      totalPatients: 100,
-      totalAmount: '$10,000',
-      totalDistance: '120 km',
-      status: 'Pending'
-    },
-    {
-      id: 3,
-      yearMonth: '2024-08',
-      totalPatients: 95,
-      totalAmount: '$9,500',
-      totalDistance: '130 km',
-      status: 'Completed'
-    }
-  ]);
+  const [data,setData] = useState([]);
+  const navigate=useNavigate()
   useEffect(()=>{
-    const summarries=getAllSummaris()
-    console.log(summarries);
+    getAllSummaris()
+    .then((data)=> setData(data))
+   
     
   },[])
+  const getMonthYear = (dateString) => {
+    const [year, month] = dateString.split('-');
+    const date = new Date(year, month - 1);
+    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  };
+
   return (
     <Stack spacing={3} sx={{width:'80%'}}>
       {data.map((item) => (
         <Card key={item.id} sx={{ boxShadow: 3, padding: 2, borderRadius: 2 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>SL-{String(item.id).padStart(5, '0')}</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}> {getMonthYear(item.time_group)}</Typography>
               <Typography variant="body2" color="text.secondary">
-                Created 1 minute ago
+                {item.status} 1 minute ago
               </Typography>
             </Box>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                Total {item.totalAmount}
+                Total {item.total_amount}
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                Distance {item.total_amount}
               </Typography>
             </Box>
           </Box>
           <Box mt={2} mb={2}>
             <Typography variant="body2">
-              {item.yearMonth
-              }
+              {item.status}
+              
             </Typography>
           </Box>
 
           <Grid container spacing={1} mt={2}>
             <Grid item>
-              <Button variant="outlined">Edit</Button>
+              <Button variant="outlined" onClick={()=>navigate(`/records/${item.time_group}`)}>Edit</Button>
             </Grid>
             <Grid item>
               <Button variant="outlined">Download</Button>
