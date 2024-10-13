@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
@@ -6,35 +6,42 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Grid';
+import { getAllSummaris } from 'actions/summaryActions';
 
-const data = [
-  {
-    id: 1,
-    yearMonth: '2024-10',
-    totalPatients: 120,
-    totalAmount: '$12,000',
-    totalDistance: '150 km',
-    status: 'Completed'
-  },
-  {
-    id: 2,
-    yearMonth: '2024-09',
-    totalPatients: 100,
-    totalAmount: '$10,000',
-    totalDistance: '120 km',
-    status: 'Pending'
-  },
-  {
-    id: 3,
-    yearMonth: '2024-08',
-    totalPatients: 95,
-    totalAmount: '$9,500',
-    totalDistance: '130 km',
-    status: 'Completed'
-  }
-];
+
 
 export default function DashboardCards() {
+  const [data,setData] = useState([
+    {
+      id: 1,
+      yearMonth: '2024-10',
+      totalPatients: 120,
+      totalAmount: '$12,000',
+      totalDistance: '150 km',
+      status: 'Completed'
+    },
+    {
+      id: 2,
+      yearMonth: '2024-09',
+      totalPatients: 100,
+      totalAmount: '$10,000',
+      totalDistance: '120 km',
+      status: 'Pending'
+    },
+    {
+      id: 3,
+      yearMonth: '2024-08',
+      totalPatients: 95,
+      totalAmount: '$9,500',
+      totalDistance: '130 km',
+      status: 'Completed'
+    }
+  ]);
+  useEffect(()=>{
+    const summarries=getAllSummaris()
+    console.log(summarries);
+    
+  },[])
   return (
     <Stack spacing={3} sx={{width:'80%'}}>
       {data.map((item) => (

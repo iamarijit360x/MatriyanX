@@ -112,3 +112,26 @@ class PatientService:
         finally:
             close_db(db)  # Ensure the database connection is closed
 
+    def create_summary(self, data, user_id):
+        db = get_db()
+        try:
+            # Prepare the data for bulk insertion
+            # Print each entry being inserted for verification
+            # Perform the bulk insertion using executemany
+            db.execute('''
+                INSERT INTO SUMMARY  time_group,user_id)
+                VALUES (?,?)
+            ''',(data['time_group'],user_id))
+            
+            db.commit()  # Commit after inserting all entries
+
+        except sqlitecloud.IntegrityError as e:
+            db.rollback()
+            raise ValueError(f"Integrity error: {e}")
+        except sqlitecloud.Error as e:
+            db.rollback()
+            raise Exception(f"Database error: {e}")
+        finally:
+            close_db(db)
+
+

@@ -12,6 +12,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
+import MonthYearPopup from './CreateRecord';
 
 const defaultRow = {
   serial_no: '1',
@@ -25,7 +26,7 @@ const defaultRow = {
   amount: '0'
 };
 
-export default function TableRecords() {
+export default function TableRecords({timegroup}) {
   const [rows, setRows] = useState([{ ...defaultRow, isEditing: true }]); // Start with one editable row
   const [errors, setErrors] = useState(Array(rows.length).fill({}));
   const [error, setError] = useState(false);
@@ -136,7 +137,8 @@ export default function TableRecords() {
       return;
     }
     
-    console.log('Saved data:', rows.filter(row=>!row.patient_id));
+    const data=rows.filter(row=>!row.patient_id);
+    console.log({patients:data,timegroup})
   };
 
   const villageOptions = ['Village A', 'Village B', 'Village C', 'Village D'];

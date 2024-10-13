@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import DashboardCards from './DashboardCards';
 import { useAuth } from 'middlewares/authContext';
+import MonthYearPopup from 'pages/record-table/CreateRecord';
 
 export default function History() {
   
@@ -24,6 +25,8 @@ export default function History() {
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#1976d2' }}>
           Monthly Overview
         </Typography>
+        <MonthYearPopup/>
+
         <Typography variant="subtitle1" gutterBottom sx={{ color: '#757575', marginBottom: 3 }}>
           A summary of patient visits, total amounts, and travel distance for each month.
         </Typography>

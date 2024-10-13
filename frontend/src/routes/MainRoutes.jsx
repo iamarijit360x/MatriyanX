@@ -42,7 +42,7 @@ const MainRoutes = {
       element:<History/>
     },
     {
-      path: 'records',
+      path: 'records/:timegroup',
       element: <Records />
     },
     {
