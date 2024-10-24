@@ -14,6 +14,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import CloseIcon from '@mui/icons-material/Close';
 import router from 'routes'; // Import your router
 import { createSummary } from 'actions/summaryActions';
+import dayjs from 'dayjs'; // Import dayjs to manage date
 
 export default function MonthYearPopup() {
   const [open, setOpen] = useState(false);
@@ -27,11 +28,11 @@ export default function MonthYearPopup() {
     setOpen(false);
   };
 
-  const handleSubmit = async() => {
-    if(selectedDate){
-        const time_group=` ${selectedDate.$d.getFullYear()}-${selectedDate.$d.getMonth()}`
-        await createSummary(time_group)
-        router.navigate(`/records/${time_group}`)
+  const handleSubmit = async () => {
+    if (selectedDate) {
+      const time_group = `${selectedDate.$d.getFullYear()}-${selectedDate.$d.getMonth() + 1}`; // Adjust month index
+      await createSummary(time_group);
+      router.navigate(`/records/${time_group}`);
     }
     setOpen(false);
   };
@@ -58,6 +59,7 @@ export default function MonthYearPopup() {
               views={['year', 'month']}
               label="Month-Year"
               value={selectedDate}
+              minDate={dayjs()} // Prevent selecting past months and years
               onChange={(newValue) => setSelectedDate(newValue)}
               renderInput={(params) => <TextField {...params} fullWidth />}
             />

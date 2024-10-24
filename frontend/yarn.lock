@@ -2857,6 +2857,11 @@ date-fns@^2.0.0, date-fns@^2.25.0, date-fns@^2.30.0:
   dependencies:
     "@babel/runtime" "^7.21.0"
 
+dayjs@^1.10.7, dayjs@^1.11.13, dayjs@^1.8.17:
+  version "1.11.13"
+  resolved "https://registry.npmjs.org/dayjs/-/dayjs-1.11.13.tgz"
+  integrity sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==
+
 debug@^3.2.7:
   version "3.2.7"
   resolved "https://registry.npmjs.org/debug/-/debug-3.2.7.tgz"
@@ -4235,6 +4240,7 @@ lru-cache@^5.1.1:
     apexcharts "^3.49.0"
     axios "^1.7.7"
     date-fns "^2.30.0"
+    dayjs "^1.11.13"
     formik "^2.4.5"
     framer-motion "^11.0.8"
     lodash "^4.17.21"

@@ -21,7 +21,7 @@ export default function DashboardCards() {
   },[])
   const getMonthYear = (dateString) => {
     const [year, month] = dateString.split('-');
-    const date = new Date(year, month - 1);
+    const date = new Date(year, month);
     return date.toLocaleString('default', { month: 'long', year: 'numeric' });
   };
 
