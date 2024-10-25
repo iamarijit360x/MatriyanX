@@ -4,6 +4,7 @@ import { lazy } from 'react';
 import Loadable from 'components/Loadable';
 import Dashboard from 'layout/Dashboard';
 import { element } from 'prop-types';
+import { ProtectedRoute } from 'middlewares/apiMiddleware';
 
 const Color = Loadable(lazy(() => import('pages/component-overview/color')));
 const Typography = Loadable(lazy(() => import('pages/component-overview/typography')));
@@ -18,38 +19,36 @@ const Account=Loadable(lazy(() => import('pages/account/index')));
 
 const MainRoutes = {
   path: '/',
-  element: <Dashboard />,
+  element: <ProtectedRoute />, // Wrap the entire dashboard route in ProtectedRoute
   children: [
     {
       path: '/',
-      element: <DashboardDefault />
-    },
-    {
-      path: 'color',
-      element: <Color />
-    },
-    {
-      path: 'dashboard',
+      element: <Dashboard />, // Your layout that contains the sidebar and navbar
       children: [
         {
-          path: 'default',
+          path: '/',
           element: <DashboardDefault />
+        },
+        {
+          path: 'color',
+          element: <Color />
+        },
+        {
+          path: 'history',
+          element: <History />
+        },
+        {
+          path: 'records/:timegroup',
+          element: <Records />
+        },
+        {
+          path: 'account',
+          element: <Account />
         }
       ]
-    },
-    {
-      path:'history',
-      element:<History/>
-    },
-    {
-      path: 'records/:timegroup',
-      element: <Records />
-    },
-    {
-      path: 'account',
-      element: <Account />
     }
   ]
 };
+
 
 export default MainRoutes;

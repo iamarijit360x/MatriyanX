@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
   const [loginAccountID, setLoginAccountID] = useLocalStorage('user', null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access_token');
     if (token) {
       setIsAuthenticated(true);
       const user = localStorage.getItem('user');
