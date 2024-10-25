@@ -10,7 +10,7 @@ class SummaryService:
             db.execute('''CREATE TABLE IF NOT EXISTS SUMMARY (
             time_group TEXT NOT NULL,
             total_patients INTEGER NOT NULL,
-            distance INTEGER NOT NULL,
+            total_distance INTEGER NOT NULL,
             total_amount INTEGER NOT NULL,
             status TEXT NOT NULL,
             user_id INTEGER NOT NULL,
@@ -18,7 +18,7 @@ class SummaryService:
             FOREIGN KEY (user_id) REFERENCES users(id)  -- Foreign key to user table
         );''')
             db.execute('''
-            INSERT INTO SUMMARY (time_group, total_patients, distance, total_amount, user_id, status)
+            INSERT INTO SUMMARY (time_group, total_patients, total_distance, total_amount, user_id, status)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (
             data['time_group'], 
@@ -41,13 +41,54 @@ class SummaryService:
             raise Exception(f"Database error: {e}")
         finally:
             close_db(db)  # Ensure the database connection is closed
+    def update_summary(self, data, time_group, user_id):
+        db = get_db()
+        try:
+            # Check if only status is provided in the data
+            if 'status' in data and len(data) == 1:
+                # Update only the status column if that's the only key in data
+                db.execute('''
+                    UPDATE SUMMARY
+                    SET status = ?
+                    WHERE user_id = ? AND time_group = ?
+                ''', (
+                    data['status'],  # New status from data
+                    user_id,         # User ID
+                    time_group       # Time group
+                ))
+            else:
+                # Update other columns if they are included in the data
+                db.execute('''
+                    UPDATE SUMMARY
+                    SET total_patients = ?, total_distance = ?, total_amount = ?
+                    WHERE user_id = ? AND time_group = ?
+                ''', (
+                    data.get('total_patients', 0), 
+                    data.get('total_distance', 0),
+                    data.get('total_amount', 0),
+                    user_id,
+                    time_group
+                ))
+
+            db.commit()  # Commit the transaction after updating
+
+        except sqlitecloud.IntegrityError as e:
+            db.rollback()  # Rollback if there's an integrity error
+            print('INTEGRITY')
+            raise ValueError(f"Integrity error: {e}")
+        except sqlitecloud.Error as e:
+            db.rollback()  # Rollback for general database errors
+            raise Exception(f"Database error: {e}")
+        finally:
+            close_db(db)  # Ensure the database connection is closed
+
 
     def get_summaries_by_user(self, user_id):
         db = get_db()
         try:
             # Query to fetch all summaries where user_id matches the given one
             cursor = db.execute('''
-                SELECT * FROM SUMMARY WHERE user_id = ?
+                SELECT * FROM SUMMARY WHERE user_id = ? ORDER BY time_group DESC
             ''', (user_id,))
 
 

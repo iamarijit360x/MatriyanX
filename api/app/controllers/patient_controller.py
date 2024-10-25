@@ -4,9 +4,10 @@ from ..validators import validate_patient_data
 from app.database import get_db,close_db
 from ..services.auth_service import AuthService
 from ..services.patient_service import PatientService
-
+from ..services.summary_service import SummaryService
 auth_service=AuthService()
 patient_service=PatientService()
+summary_service=SummaryService()
 
 @auth_service.token_check
 def create_patient(user):
@@ -18,6 +19,7 @@ def create_patient(user):
         return jsonify(str(obj)), 400
 
     patient_service.create_patients(data,data['timegroup'],user['id'])
+    summary_service.update_summary({'total_amount':data['total_amount'],'total_distance':data['total_distance'],'total_patients':len(data['patients'])},data['timegroup'],user['id'])
     return jsonify({'status':'ok'}),200
 
 @auth_service.token_check

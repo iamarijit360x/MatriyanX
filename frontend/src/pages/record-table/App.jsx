@@ -10,11 +10,14 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+import { format } from 'date-fns';
 import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
 import MonthYearPopup from './CreateRecord';
 import { createPatient, getAllPatients } from 'actions/patientActions';
 import axiosInstance from 'middlewares/axiosConfig';
+import { getMonthYear } from 'utils/utils';
+import Typography from '@mui/material/Typography';
 
 const defaultRow = {
   serial_no: '1',
@@ -28,13 +31,19 @@ const defaultRow = {
   amount: '0'
 };
 
-export default function TableRecords({timegroup}) {
+export default function TableRecords({timegroup,editable}) {
   const [rows, setRows] = useState([{ ...defaultRow, isEditing: true }]); // Start with one editable row
   const [errors, setErrors] = useState(Array(rows.length).fill({}));
   const [error, setError] = useState(false);
   const totalAmount = rows.reduce((total, row) => total + parseFloat(row.amount) || 0, 0);
   const totalDistance= rows.reduce((total, row) => total + parseFloat(row.distance) || 0, 0);
 
+  const [year, month] = timegroup.split('-').map(Number);  // Extract year and month
+  const startDate = new Date(year, month-1);                 // Start of the month
+  const endDate = new Date(year, month, 0);            // End of the month
+
+
+  
   useEffect(() => {
     if(timegroup)
     getAllPatients(timegroup).then(data=>{setRows(data)})
@@ -80,8 +89,8 @@ export default function TableRecords({timegroup}) {
   };
 
   const handleDateChange = (index, newDate) => {
-    const newRows = rows.map((row, i) => (i === index ? { ...row, date: newDate } : row));
-    setRows(newRows);
+      const newRows = rows.map((row, i) => (i === index ? { ...row, date: newDate } : row));
+      setRows(newRows);
   };
 
 const handleAddRow = () => {
@@ -139,19 +148,23 @@ const handleAddRow = () => {
     }
     
     const data=rows.filter(row=>!row.patient_id);
-    if(data.length)
+    if(data.length){
       await createPatient({patients:data,timegroup,total_amount:totalAmount,total_distance:totalDistance})
+      getAllPatients(timegroup).then(data=>{setRows(data)})
+    }
   };
 
   const villageOptions = ['Village A', 'Village B', 'Village C', 'Village D'];
-
+  console.log(JSON.stringify(getMonthYear(timegroup)));
+  
   return (
     <>
+      <Typography sx={{textAlign:'center',paddingBlockEnd:'2%'}} variant="h3" color="textPrimary">Patients Data for {getMonthYear(timegroup)}</Typography>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              {['Sl No', 'Name', 'Voucher Type', 'Voucher No', 'District', 'Village', 'Distance', 'Date', 'Amount', 'Actions'].map(header => (
+              {['Sl No', 'Name', 'Voucher Type', 'Voucher No', 'District', 'Village', 'Distance', 'Date', 'Amount', ...[editable && 'actions']].map(header => (
                 <TableCell key={header} sx={{ textAlign: 'center' }}>{header}</TableCell>
               ))}
             </TableRow>
@@ -197,11 +210,14 @@ const handleAddRow = () => {
                       ) : key === 'date' ? (
                         <LocalizationProvider dateAdapter={AdapterDateFns}>
                           <DatePicker
+                            inputFormat="dd-MM-yyyy"
                             value={row.date}
+                            minDate={startDate}         // Set min date
+                            maxDate={endDate}           // Set max date
                             onChange={(date) => handleDateChange(index, date)}
                             renderInput={(params) => (
                               <TextField
-                                error={errors[index]?.[key]}
+                                error={errors[index]?.date}
                                 size="small"
                                 fullWidth
                                 {...params}
@@ -232,14 +248,14 @@ const handleAddRow = () => {
                       )
                     ) : (
                       row[key] ? (
-                        key === 'date' ? new Date(row[key]).toLocaleDateString() : row[key]
+                        key === 'date' ? format(new Date(row[key]), 'dd-MM-yyyy') : row[key]
                       ) : (
                         <span style={{ color: '#999' }}>{`Enter ${key}`}</span>
                       )
                     )}
                   </TableCell>
                 ))}
-                <TableCell sx={{ display: 'flex', justifyContent: 'center' }}>
+                {editable && <TableCell sx={{ display: 'flex', justifyContent: 'center' }}>
                   {row.isEditing ? (
                     <IconButton onClick={() => handleSaveRow(index)}>
                       <SaveIcon />
@@ -252,7 +268,7 @@ const handleAddRow = () => {
                   <IconButton onClick={() => handleDeleteRow(index)}>
                     <DeleteIcon />
                   </IconButton>
-                </TableCell>
+                </TableCell>}
               </TableRow>
             ))}
             <TableRow>
@@ -263,12 +279,13 @@ const handleAddRow = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <Button onClick={handleAddRow} startIcon={<AddIcon />} sx={{ marginTop: '10px' }}>
-        Add Patient
-      </Button>
-      <Button onClick={handleSaveAll} sx={{ marginTop: '10px', marginLeft: '10px' }}>
-        Save All
-      </Button>
+     {editable && 
+      <>
+        <Button onClick={handleAddRow} startIcon={<AddIcon />} sx={{ marginTop: '10px' }}>
+          Add Patient
+        </Button><Button onClick={handleSaveAll} sx={{ marginTop: '10px', marginLeft: '10px' }}>
+          Save All
+        </Button></>}
     </>
   );
 }

@@ -9,6 +9,7 @@ import Grid from '@mui/material/Grid';
 import { getAllSummaris } from 'actions/summaryActions';
 import router from 'routes';
 import { useNavigate } from 'react-router-dom';
+import { getMonthYear } from 'utils/utils';
 
 export default function DashboardCards() {
   const [data,setData] = useState([]);
@@ -19,11 +20,7 @@ export default function DashboardCards() {
    
     
   },[])
-  const getMonthYear = (dateString) => {
-    const [year, month] = dateString.split('-');
-    const date = new Date(year, month);
-    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
-  };
+
 
   return (
     <Stack spacing={3} sx={{width:'80%'}}>
@@ -54,7 +51,7 @@ export default function DashboardCards() {
 
           <Grid container spacing={1} mt={2}>
             <Grid item>
-              <Button variant="outlined" onClick={()=>navigate(`/records/${item.time_group}`)}>Edit</Button>
+              <Button variant="outlined" onClick={()=>navigate(`/records/${item.time_group}`, { state: { editable:item.status==='Created' } })}>{item.status==='Created'?'Edit':'View'}</Button>
             </Grid>
             <Grid item>
               <Button variant="outlined">Download</Button>

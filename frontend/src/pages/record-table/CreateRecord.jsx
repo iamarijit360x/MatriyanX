@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogActions,
@@ -27,10 +27,16 @@ export default function MonthYearPopup() {
   const handleClose = () => {
     setOpen(false);
   };
+  useEffect(()=>{ 
+    if(selectedDate)
+      console.log(`${selectedDate.$d.getFullYear()}-${selectedDate.$d.getMonth() + 1}`)
+  
+  },[selectedDate])
 
   const handleSubmit = async () => {
     if (selectedDate) {
       const time_group = `${selectedDate.$d.getFullYear()}-${selectedDate.$d.getMonth() + 1}`; // Adjust month index
+      console.log(selectedDate.$d.getMonth() + 1)
       await createSummary(time_group);
       router.navigate(`/records/${time_group}`);
     }
