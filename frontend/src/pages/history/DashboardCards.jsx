@@ -38,7 +38,7 @@ export default function DashboardCards() {
                 Total {item.total_amount}
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                Distance {item.total_amount}
+                Distance {item.total_distance} Km
               </Typography>
             </Box>
           </Box>

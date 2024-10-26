@@ -1,32 +1,33 @@
 import { lazy } from 'react';
+import { Navigate } from 'react-router-dom'; // for redirection
 
 // project import
 import Loadable from 'components/Loadable';
 import Dashboard from 'layout/Dashboard';
-import { element } from 'prop-types';
 import { ProtectedRoute } from 'middlewares/apiMiddleware';
 
 const Color = Loadable(lazy(() => import('pages/component-overview/color')));
 const Typography = Loadable(lazy(() => import('pages/component-overview/typography')));
 const Shadow = Loadable(lazy(() => import('pages/component-overview/shadows')));
 const DashboardDefault = Loadable(lazy(() => import('pages/dashboard/index')));
-const History= Loadable(lazy(() => import('pages/history/index')));
-const Records= Loadable(lazy(() => import('pages/record-table/index')));
-const Account=Loadable(lazy(() => import('pages/account/index')));
-// render - sample page
-
-// ==============================|| MAIN ROUTING ||============================== //
+const History = Loadable(lazy(() => import('pages/history/index')));
+const Records = Loadable(lazy(() => import('pages/record-table/index')));
+const Account = Loadable(lazy(() => import('pages/account/index')));
 
 const MainRoutes = {
   path: '/',
-  element: <ProtectedRoute />, // Wrap the entire dashboard route in ProtectedRoute
+  element: <ProtectedRoute />, // Protect the entire route
   children: [
     {
       path: '/',
-      element: <Dashboard />, // Your layout that contains the sidebar and navbar
+      element: <Dashboard />, // Main layout with sidebar and navbar
       children: [
         {
-          path: '/',
+          index: true, // This makes `/` redirect to `/dashboard`
+          element: <Navigate to="dashboard" />
+        },
+        {
+          path: 'dashboard',
           element: <DashboardDefault />
         },
         {
@@ -49,6 +50,5 @@ const MainRoutes = {
     }
   ]
 };
-
 
 export default MainRoutes;

@@ -41,46 +41,43 @@ class SummaryService:
             raise Exception(f"Database error: {e}")
         finally:
             close_db(db)  # Ensure the database connection is closed
-    def update_summary(self, data, time_group, user_id):
+    def update_summary(self, time_group, user_id):
         db = get_db()
         try:
-            # Check if only status is provided in the data
-            if 'status' in data and len(data) == 1:
-                # Update only the status column if that's the only key in data
+            # Step 1: Aggregate data from Patients table for the given user and time_group
+            result = db.execute('''
+                SELECT 
+                    SUM(distance) AS total_distance,
+                    COUNT(*) AS total_patients,
+                    SUM(amount) AS total_amount
+                FROM Patients
+                WHERE user_id = ? AND time_group = ?
+            ''', (user_id, time_group)).fetchone()
+
+            # Step 2: Update the SUMMARY table with the aggregated results
+            print(result)
+            if result:
                 db.execute('''
                     UPDATE SUMMARY
-                    SET status = ?
+                    SET 
+                        total_distance = ?,
+                        total_patients = ?,
+                        total_amount = ?
                     WHERE user_id = ? AND time_group = ?
                 ''', (
-                    data['status'],  # New status from data
-                    user_id,         # User ID
-                    time_group       # Time group
-                ))
-            else:
-                # Update other columns if they are included in the data
-                db.execute('''
-                    UPDATE SUMMARY
-                    SET total_patients = ?, total_distance = ?, total_amount = ?
-                    WHERE user_id = ? AND time_group = ?
-                ''', (
-                    data.get('total_patients', 0), 
-                    data.get('total_distance', 0),
-                    data.get('total_amount', 0),
+                    result[0],
+                    result[1],
+                    result[2],
                     user_id,
                     time_group
                 ))
 
-            db.commit()  # Commit the transaction after updating
+            db.commit()  # Commit the transaction
 
-        except sqlitecloud.IntegrityError as e:
-            db.rollback()  # Rollback if there's an integrity error
-            print('INTEGRITY')
-            raise ValueError(f"Integrity error: {e}")
-        except sqlitecloud.Error as e:
-            db.rollback()  # Rollback for general database errors
-            raise Exception(f"Database error: {e}")
-        finally:
-            close_db(db)  # Ensure the database connection is closed
+        except Exception as e:
+            db.rollback()  # Rollback in case of error
+            print(f"Error updating summary aggregates: {e}")
+
 
 
     def get_summaries_by_user(self, user_id):

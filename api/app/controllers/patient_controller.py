@@ -19,7 +19,7 @@ def create_patient(user):
         return jsonify(str(obj)), 400
 
     patient_service.create_patients(data,data['timegroup'],user['id'])
-    summary_service.update_summary({'total_amount':data['total_amount'],'total_distance':data['total_distance'],'total_patients':len(data['patients'])},data['timegroup'],user['id'])
+    summary_service.update_summary(data['timegroup'],user['id'])
     return jsonify({'status':'ok'}),200
 
 @auth_service.token_check
@@ -33,6 +33,28 @@ def get_patients(user):
 
     
 
+@auth_service.token_check
+def edit_patient(user):
+    data=request.get_json()
+    filtered_patient = {k: v for k, v in data['patient'].items() if k not in ["time_group", "user_id", "patient_id"]}
+    error = validate_patient_data(filtered_patient) #Check if data is valid or not
+    if error:
+        obj={'error':error,'message':'Please Enter Valid Data'}
+        return jsonify(str(obj)), 400
+
+    patient_service.edit_patient(data['patient'],user['id'])
+    summary_service.update_summary(data['time_group'],user['id'])
+
+    return jsonify({'status':'ok'}),200
+
 
     
 
+@auth_service.token_check
+def delete_patient(user,patient_id):
+    timegroup =  request.args.get('timegroup')
+
+    patient_service.delete_patient(patient_id,user['id'])
+    summary_service.update_summary(timegroup,user['id'])
+
+    return jsonify({'status':'ok'}),200

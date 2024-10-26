@@ -14,10 +14,11 @@ import { format } from 'date-fns';
 import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
 import MonthYearPopup from './CreateRecord';
-import { createPatient, getAllPatients } from 'actions/patientActions';
+import { createPatient, deletePatient, editPatient, getAllPatients } from 'actions/patientActions';
 import axiosInstance from 'middlewares/axiosConfig';
 import { getMonthYear } from 'utils/utils';
 import Typography from '@mui/material/Typography';
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 
 const defaultRow = {
   serial_no: '1',
@@ -31,24 +32,50 @@ const defaultRow = {
   amount: '0'
 };
 
-export default function TableRecords({timegroup,editable}) {
+export default function TableRecords({ timegroup, editable }) {
   const [rows, setRows] = useState([{ ...defaultRow, isEditing: true }]); // Start with one editable row
+  const [originalRows, setOriginalRows] = useState([]); // Keep a copy of the original data for comparison
   const [errors, setErrors] = useState(Array(rows.length).fill({}));
   const [error, setError] = useState(false);
   const totalAmount = rows.reduce((total, row) => total + parseFloat(row.amount) || 0, 0);
-  const totalDistance= rows.reduce((total, row) => total + parseFloat(row.distance) || 0, 0);
+  const totalDistance = rows.reduce((total, row) => total + parseFloat(row.distance) || 0, 0);
 
   const [year, month] = timegroup.split('-').map(Number);  // Extract year and month
-  const startDate = new Date(year, month-1);                 // Start of the month
+  const startDate = new Date(year, month - 1);                 // Start of the month
   const endDate = new Date(year, month, 0);            // End of the month
+  const [open, setOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState(null);
 
+  const handleOpenDialog = (index) => {
+      setDeleteIndex(index);
+      setOpen(true);
+  };
 
-  
+  const handleCloseDialog = () => {
+      setOpen(false);
+      setDeleteIndex(null);
+  };
+
+  const handleConfirmDelete = () => {
+      if (deleteIndex !== null) {
+          handleDeleteRow(deleteIndex);
+      }
+      handleCloseDialog();
+  };
+  const fetchAndSetAllPatients = () => {
+    getAllPatients(timegroup).then((data) => {
+      setRows(data);
+      setOriginalRows(data); // Initialize original rows
+    });
+  }
+
   useEffect(() => {
-    if(timegroup)
-    getAllPatients(timegroup).then(data=>{setRows(data)})
+    if (timegroup) {
+      fetchAndSetAllPatients();
+    }
   }, []);
-  
+
+
   const calculateAmount = (distance) => {
     let amount = 0;
     switch (true) {
@@ -89,18 +116,22 @@ export default function TableRecords({timegroup,editable}) {
   };
 
   const handleDateChange = (index, newDate) => {
-      const newRows = rows.map((row, i) => (i === index ? { ...row, date: newDate } : row));
-      setRows(newRows);
+    const newRows = rows.map((row, i) => (i === index ? { ...row, date: newDate } : row));
+    setRows(newRows);
   };
 
-const handleAddRow = () => {
-  const newSerialNo = rows.length > 0 ? Math.max(...rows.map(row => row.serial_no)) + 1 : 1;
-  const newVoucherNumber = rows.length > 0 ? Math.max(...rows.map(row => parseInt(row.voucher_number, 10))) + 1 : 1;
-  setRows([...rows, { ...defaultRow, serial_no: newSerialNo, voucher_number: newVoucherNumber, isEditing: true }]);
-};
+  const handleAddRow = () => {
+    const newSerialNo = rows.length > 0 ? Math.max(...rows.map(row => row.serial_no)) + 1 : 1;
+    const newVoucherNumber = rows.length > 0 ? Math.max(...rows.map(row => parseInt(row.voucher_number, 10))) + 1 : 1;
+    setRows([...rows, { ...defaultRow, serial_no: newSerialNo, voucher_number: newVoucherNumber, isEditing: true }]);
+  };
 
-  const handleDeleteRow = (index) => {
+  const handleDeleteRow = async (index) => {
+    if(!!rows[index].patient_id)
+      await deletePatient(rows[index].patient_id,timegroup);
     setRows(rows.filter((_, i) => i !== index));
+    fetchAndSetAllPatients()
+   
   };
 
   const handleEditRow = (index) => {
@@ -108,10 +139,46 @@ const handleAddRow = () => {
     setRows(newRows);
   };
 
-  const handleSaveRow = (index) => {
+  function deepEqual(obj1, obj2) {
+    // Check if both values are identical
+    if (obj1 === obj2) return true;
+
+    // Check if both values are objects
+    if (obj1 == null || obj2 == null || typeof obj1 !== 'object' || typeof obj2 !== 'object') {
+        return false;
+    }
+
+    // Get keys of both objects
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    // Check if they have the same number of keys
+    if (keys1.length !== keys2.length) return false;
+
+    // Check if all keys and values are equal
+    for (let key of keys1) {
+        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function hasChanged(obj1, obj2) {
+    // Remove 'isEditing' key from obj1 if it exists
+    const { isEditing, ...filteredObj1 } = obj1;
+
+    // Use deepEqual to compare filtered obj1 with obj2
+    return !deepEqual(filteredObj1, obj2);
+}
+
+
+  const handleSaveRow = async (index) => {
     const row = rows[index];
     const newErrors = { ...errors[index] };
-  
+    const isExisting = !!row.patient_id;
+
     // Validation and conversion
     Object.keys(defaultRow).forEach(key => {
       if (row[key] === '' || (key === 'date' && row[key] === null)) {
@@ -119,25 +186,30 @@ const handleAddRow = () => {
         setError(true);
       } else {
         newErrors[key] = false;
-  
+
         // Convert distance, voucher_number, and amount to integers
-        if (['distance', 'voucher_number', 'amount','serial_no'].includes(key)) {
+        if (['distance', 'voucher_number', 'amount', 'serial_no'].includes(key)) {
           row[key] = parseInt(row[key], 10);
         }
       }
     });
-  
+
     const updatedErrors = [...errors];
     updatedErrors[index] = newErrors;
     setErrors(updatedErrors);
-  
+
     if (Object.values(newErrors).every(err => !err)) {
       setError(false);
       const newRows = rows.map((row, i) => (i === index ? { ...row, isEditing: false } : row));
+      console.log(newRows)
       setRows(newRows);
+      if (isExisting && hasChanged(newRows[index],originalRows[index])) {
+        await editPatient({ patient: row, total_amount: totalAmount, total_distance: totalDistance, time_group: timegroup });
+        fetchAndSetAllPatients();
+      }
     }
   };
-  
+
   const handleSaveAll = async () => {
     rows.forEach((_, index) => {
       handleSaveRow(index);
@@ -146,20 +218,19 @@ const handleAddRow = () => {
       console.log('ERROR');
       return;
     }
-    
-    const data=rows.filter(row=>!row.patient_id);
-    if(data.length){
-      await createPatient({patients:data,timegroup,total_amount:totalAmount,total_distance:totalDistance})
-      getAllPatients(timegroup).then(data=>{setRows(data)})
+
+    const data = rows.filter(row => !row.patient_id);
+    if (data.length) {
+      await createPatient({ patients: data, timegroup, total_amount: totalAmount, total_distance: totalDistance })
+      fetchAndSetAllPatients();
     }
   };
 
   const villageOptions = ['Village A', 'Village B', 'Village C', 'Village D'];
-  console.log(JSON.stringify(getMonthYear(timegroup)));
-  
+
   return (
     <>
-      <Typography sx={{textAlign:'center',paddingBlockEnd:'2%'}} variant="h3" color="textPrimary">Patients Data for {getMonthYear(timegroup)}</Typography>
+      <Typography sx={{ textAlign: 'center', paddingBlockEnd: '2%' }} variant="h3" color="textPrimary">Patients Data for {getMonthYear(timegroup)}</Typography>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -171,9 +242,11 @@ const handleAddRow = () => {
           </TableHead>
           <TableBody>
             {rows.map((row, index) => (
-              <TableRow key={index}>
+              <TableRow key={index} >
+                
                 {Object.keys(defaultRow).map((key) => (
-                  <TableCell key={key} sx={{ padding: '5px', textAlign: 'center' }}>
+                  <TableCell key={key} sx={{ padding: '5px', textAlign: 'center', borderColor: row?.patient_id ? '' : 'yellow' }}>
+                    
                     {row.isEditing ? (
                       key === 'voucher_type' ? (
                         <Select
@@ -265,9 +338,34 @@ const handleAddRow = () => {
                       <EditIcon />
                     </IconButton>
                   )}
-                  <IconButton onClick={() => handleDeleteRow(index)}>
+                  {/* <IconButton onClick={() => handleDeleteRow(index)}>
                     <DeleteIcon />
-                  </IconButton>
+                  </IconButton> */}
+                  <React.Fragment>
+                    <IconButton onClick={() => setOpen(true)}>
+                      <DeleteIcon />
+                    </IconButton>
+                    <Dialog
+                      open={open}
+                      onClose={()=>setOpen(false)}
+                      aria-labelledby="responsive-dialog-title"
+                    >
+                      <DialogTitle id="responsive-dialog-title">
+                        {" Are you sure you want to delete this row? This action cannot be undone."}
+                      </DialogTitle>
+                      <DialogContent>
+                  
+                      </DialogContent>
+                      <DialogActions>
+                        <Button autoFocus onClick={()=>setOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={()=>{handleDeleteRow(index);setOpen(false)}} autoFocus>
+                          Delete
+                        </Button>
+                      </DialogActions>
+                    </Dialog>
+                </React.Fragment>
                 </TableCell>}
               </TableRow>
             ))}
@@ -279,13 +377,13 @@ const handleAddRow = () => {
           </TableBody>
         </Table>
       </TableContainer>
-     {editable && 
-      <>
-        <Button onClick={handleAddRow} startIcon={<AddIcon />} sx={{ marginTop: '10px' }}>
-          Add Patient
-        </Button><Button onClick={handleSaveAll} sx={{ marginTop: '10px', marginLeft: '10px' }}>
-          Save All
-        </Button></>}
+      {editable &&
+        <>
+          <Button onClick={handleAddRow} startIcon={<AddIcon />} sx={{ marginTop: '10px' }}>
+            Add Patient
+          </Button><Button onClick={handleSaveAll} sx={{ marginTop: '10px', marginLeft: '10px' }}>
+            Save All
+          </Button></>}
     </>
   );
 }

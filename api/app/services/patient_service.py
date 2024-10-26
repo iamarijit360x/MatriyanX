@@ -54,15 +54,15 @@ class PatientService:
 
    
     
-    def edit_patient(self, patientID, updated_data,user_id):
+    def edit_patient(self, updated_data,user_id):
             db = get_db()
+            print(updated_data)
             try:
-                # Update patient details based on patientID
-                db.execute('''
+                x=db.execute('''
                     UPDATE Patients
                     SET name = ?, village = ?, district = ?, voucher_number = ?, 
-                        Distance = ?, date = ?, amount = ?, voucher_type = ?
-                    WHERE distance = ? AND user_id= ?
+                        distance = ?, date = ?, amount = ?, voucher_type = ?
+                    WHERE patient_id = ? AND user_id= ?
                 ''', (
                     updated_data['name'],
                     updated_data['village'],
@@ -72,7 +72,7 @@ class PatientService:
                     updated_data['date'],
                     updated_data['amount'],
                     updated_data['voucher_type'],
-                    patientID,
+                    updated_data['patient_id'],
                     user_id
                 ))
                 db.commit()
@@ -133,5 +133,27 @@ class PatientService:
             raise Exception(f"Database error: {e}")
         finally:
             close_db(db)
+    
+    def delete_patient(self, patient_id, user_id):
+        db = get_db()
+        try:
+            # Prepare the data for bulk insertion
+            # Print each entry being inserted for verification
+            # Perform the bulk insertion using executemany
+            db.execute('''
+               DELETE FROM Patients WHERE user_id=? AND patient_id=?
+            ''',(user_id,patient_id))
+            
+            db.commit()  # Commit after inserting all entries
+
+        except sqlitecloud.IntegrityError as e:
+            db.rollback()
+            raise ValueError(f"Integrity error: {e}")
+        except sqlitecloud.Error as e:
+            db.rollback()
+            raise Exception(f"Database error: {e}")
+        finally:
+            close_db(db)
+
 
 

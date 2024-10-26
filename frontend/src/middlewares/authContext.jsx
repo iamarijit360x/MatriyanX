@@ -29,20 +29,7 @@ const useLocalStorage = (key, defaultValue) => {
 
 // AuthProvider component
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
-  const [loginAccountID, setLoginAccountID] = useLocalStorage('user', null);
-
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      setIsAuthenticated(true);
-      const user = localStorage.getItem('user');
-      if (user) {
-        const parsedUser = JSON.parse(user);
-        setLoginAccountID(parsedUser?.account_id);
-      }
-    }
-  }, [setLoginAccountID]);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
 
   // Login function
   const login = (data) => {
@@ -63,7 +50,7 @@ export const AuthProvider = ({ children }) => {
 
   // Provide authentication context to children
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, loginAccountID }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
