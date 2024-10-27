@@ -6,7 +6,7 @@ from ..services.auth_service import AuthService
 auth_service=AuthService()
 
 @auth_service.token_check
-def protected(user ):
-    """Protected route that requires a valid JWT."""
+def create_account(user ):
+    
     return jsonify(user)
 

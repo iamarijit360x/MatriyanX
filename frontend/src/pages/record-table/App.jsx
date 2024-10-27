@@ -39,7 +39,6 @@ export default function TableRecords({ timegroup, editable }) {
   const [error, setError] = useState(false);
   const totalAmount = rows.reduce((total, row) => total + parseFloat(row.amount) || 0, 0);
   const totalDistance = rows.reduce((total, row) => total + parseFloat(row.distance) || 0, 0);
-
   const [year, month] = timegroup.split('-').map(Number);  // Extract year and month
   const startDate = new Date(year, month - 1);                 // Start of the month
   const endDate = new Date(year, month, 0);            // End of the month
@@ -127,8 +126,12 @@ export default function TableRecords({ timegroup, editable }) {
   };
 
   const handleDeleteRow = async (index) => {
-    if(!!rows[index].patient_id)
+ 
+    if(!!rows[index].patient_id){
+
+      
       await deletePatient(rows[index].patient_id,timegroup);
+    }
     setRows(rows.filter((_, i) => i !== index));
     fetchAndSetAllPatients()
    
@@ -342,7 +345,7 @@ function hasChanged(obj1, obj2) {
                     <DeleteIcon />
                   </IconButton> */}
                   <React.Fragment>
-                    <IconButton onClick={() => setOpen(true)}>
+                    <IconButton onClick={() => handleOpenDialog(index)}>
                       <DeleteIcon />
                     </IconButton>
                     <Dialog
@@ -360,8 +363,8 @@ function hasChanged(obj1, obj2) {
                         <Button autoFocus onClick={()=>setOpen(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={()=>{handleDeleteRow(index);setOpen(false)}} autoFocus>
-                          Delete
+                        <Button onClick={()=>{handleDeleteRow(deleteIndex);setOpen(false)}} autoFocus>
+                          Delete 
                         </Button>
                       </DialogActions>
                     </Dialog>

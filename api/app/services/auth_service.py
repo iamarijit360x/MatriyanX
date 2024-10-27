@@ -7,14 +7,18 @@ import sqlitecloud
 from app.database import get_db,close_db
 class AuthService:
     def create_user(self,data):
+        user_id=None
         db  = get_db()
         try:
             # Attempt to insert a new user
-            db.execute('''
+            cursor=db.execute('''
                 INSERT INTO users (email, password)
                 VALUES (?, ?)
             ''', ( data['email'], data['password']))
+            user_id = cursor.lastrowid
+            # Return the user_id
             db.commit()
+            
         except sqlitecloud.IntegrityError:
             db.rollback()
             raise ValueError ('Email already exists')
@@ -23,6 +27,7 @@ class AuthService:
             raise Exception(str(e)) 
         finally:
             close_db(db)
+            return user_id if user_id else None
    
     def generate_set_refresh_token(self,user):
         db=get_db()

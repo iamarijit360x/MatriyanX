@@ -30,11 +30,14 @@ const useLocalStorage = (key, defaultValue) => {
 // AuthProvider component
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
+  const [account, setAccount] = useState(JSON.parse(localStorage.getItem('account')));
 
   // Login function
   const login = (data) => {
     localStorage.setItem('access_token', data.access_token);
-    localStorage.setItem('refresh_token', data.refresh_token);
+    localStorage.setItem('refresh_token', data?.refresh_token);
+    localStorage.setItem('account', JSON.stringify(data?.account));
+
     setIsAuthenticated(true);
     // setLoginAccountID(data?.user?.account_id);
     router.navigate('/history'); 
@@ -50,7 +53,7 @@ export const AuthProvider = ({ children }) => {
 
   // Provide authentication context to children
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated,account,login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -19,7 +19,7 @@ export default function HeaderContent() {
   return (
     <>
       <Box sx={{ width: '100%', ml: { xs: 0, md: 1 } }}>
-        <p>X</p>
+        <p>Devloped</p>
     </Box>
       {downLG && <Box sx={{ width: '100%', ml: 1 }} />}
 
