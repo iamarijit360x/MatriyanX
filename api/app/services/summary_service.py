@@ -131,7 +131,6 @@ class SummaryService:
             # Convert the result row to a dictionary using the column names
             summary = dict(zip(columns, row))
 
-            print(summary)  # Debugging print to check the formatted result
             return summary  # Return the summary object as a dictionary
 
         except sqlitecloud.Error as e:

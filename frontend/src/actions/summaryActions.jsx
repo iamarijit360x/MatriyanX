@@ -24,3 +24,31 @@ export const getAllSummaris = async () => {
       return 'error';
     }
   };
+
+  export const generateSummaryReport = async (time_group) => {
+    try {
+      const response = await axiosInstance.get(apiUrl+`/summary/generate-report/${time_group}`, {
+        responseType: "blob", // Specify that the response should be a blob (binary data)
+        headers: {
+          "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // Accept Excel file
+        },
+      });
+
+      // Create a Blob from the response data
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      // Create a download link for the Blob data
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob); // Create a URL for the Blob
+      link.download = "report.xlsx"; // Set the default file name
+      link.click(); // Programmatically trigger the download     
+   
+    } catch (error) {
+      console.error('An error occurred during signup:', error);
+      return 'error';
+    }
+  };
+
+  

@@ -44,7 +44,48 @@ export default function TableRecords({ timegroup, editable }) {
   const endDate = new Date(year, month, 0);            // End of the month
   const [open, setOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
+  const [openQuickUpload, setOpenQuickUpload] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
 
+  // Function to handle opening and closing the Quick Upload dialog
+  const handleOpenQuickUpload = () => setOpenQuickUpload(true);
+  const handleCloseQuickUpload = () => {
+    setOpenQuickUpload(false);
+    setJsonInput('');  // Clear input after closing
+  };
+
+  // Function to parse and add pasted JSON data
+  const handleAddQuickUpload = () => {
+    try {
+      const parsedData = JSON.parse(jsonInput);
+      console.log(parsedData);
+      // Check if parsed data is an array and each item has the required keys
+      // if (!Array.isArray(parsedData) || parsedData.some(item => !item.name || !item.village || !item.token || !item.distance || !item.date || !item.amount)) {
+      //   throw new Error('Invalid data format');
+      // }
+      const maxVoucherNumber = rows.length > 0 ? Math.max(...rows.map(row => row.voucher_number || 0)) : 0;
+
+      // Format each item and calculate `amount` if needed
+      const newRows = parsedData.map((item, index) => ({
+        serial_no: rows.length + index + 1, // Serial number for each row
+        name: item.name,
+        village: item.village,
+        voucher_type:`V${item.voucher_type}`, // Assuming token corresponds to `voucher_type`
+        voucher_number: maxVoucherNumber+index+1, // Generate a voucher number
+        district: 'Burdwan', // Assuming default district
+        distance: item.distance,
+        date: new Date(format(new Date(item.date), 'MM/dd/yyyy')), // Format date to a JS Date object
+        amount: item.amount,
+        isEditing: false,
+      }));
+
+      setRows([...rows, ...newRows]);  // Append the new rows to the existing ones
+      handleCloseQuickUpload();  // Close the dialog after uploading
+    } catch (error) {
+      console.error('Invalid JSON format', error);
+      alert('Please paste a valid JSON array of patient objects.');
+    }
+  };
   const handleOpenDialog = (index) => {
       setDeleteIndex(index);
       setOpen(true);
@@ -131,9 +172,10 @@ export default function TableRecords({ timegroup, editable }) {
 
       
       await deletePatient(rows[index].patient_id,timegroup);
+      fetchAndSetAllPatients()
+
     }
-    setRows(rows.filter((_, i) => i !== index));
-    fetchAndSetAllPatients()
+    else setRows(rows.filter((_, i) => i !== index));
    
   };
 
@@ -386,7 +428,41 @@ function hasChanged(obj1, obj2) {
             Add Patient
           </Button><Button onClick={handleSaveAll} sx={{ marginTop: '10px', marginLeft: '10px' }}>
             Save All
-          </Button></>}
+          </Button>
+          <Button onClick={handleOpenQuickUpload} startIcon={<AddIcon />} sx={{ marginTop: '10px' }}>
+        Quick Upload
+      </Button>
+
+      {/* Quick Upload Dialog */}
+      <Dialog open={openQuickUpload} onClose={handleCloseQuickUpload} maxWidth="md" fullWidth>
+  <DialogTitle>Quick Upload Patients</DialogTitle>
+  <DialogContent>
+    <TextField
+      label="Paste JSON array here"
+      placeholder='e.g., [{"name": "Deepali Lohar", "village": "Morsidpur", "token": "1", "distance": 22, "date": "1-8-24", "amount": 350.00}]'
+      multiline
+      rows={10}  // Increase the number of rows
+      fullWidth
+      variant="outlined"
+      value={jsonInput}
+      onChange={(e) => setJsonInput(e.target.value)}
+      sx={{
+        width: '100%',   // Full width of the dialog
+        height: '300px', // Custom height
+      }}
+    />
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={handleCloseQuickUpload} color="secondary">
+      Cancel
+    </Button>
+    <Button onClick={handleAddQuickUpload} color="primary">
+      Upload
+    </Button>
+  </DialogActions>
+</Dialog>
+
+          </>}
     </>
   );
 }

@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Grid';
-import { getAllSummaris } from 'actions/summaryActions';
+import { generateSummaryReport, getAllSummaris } from 'actions/summaryActions';
 import router from 'routes';
 import { useNavigate } from 'react-router-dom';
 import { getMonthYear } from 'utils/utils';
@@ -58,6 +58,9 @@ export default function DashboardCards() {
             </Grid>
             <Grid item>
               <Button variant="outlined">Send</Button>
+            </Grid>
+            <Grid item>
+              <Button variant="outlined" onClick={()=>generateSummaryReport(item.time_group)}>Generate Report</Button>
             </Grid>
             {/* <Grid item>
               <Button variant="outlined">Client</Button>

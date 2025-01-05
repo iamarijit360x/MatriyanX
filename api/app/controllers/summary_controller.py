@@ -2,12 +2,15 @@
 from flask import jsonify, request
 from ..validators import validate_user_data
 from app.database import get_db,close_db
+from flask import send_file
 from ..services.summary_service import SummaryService
 from ..services.auth_service import AuthService
-
+from ..services.patient_service import PatientService
+from ..services.excel_service import ExcelService
 auth_service=AuthService()
 summary_service= SummaryService()
-
+patient_service=PatientService()
+excelService=ExcelService()
 @auth_service.token_check
 def create_summary(user):
     try:
@@ -50,4 +53,16 @@ def get_summary_by_time_group(user,time_group):
         return jsonify(summaries), 200
     except Exception as e:
 
+        return jsonify({"message": "An error occurred","error":str(e)}), 500
+@auth_service.token_check
+def generate_summary_report(user,time_group):
+    try:
+       
+        user_id = user['id']
+        # Call the service to create the summary
+        summaries=patient_service.get_patients(user_id,time_group)
+        santizedData=excelService.data_sanitization(summaries)
+        excel_file=excelService.generateExcel(santizedData,time_group)
+        return send_file(excel_file, as_attachment=True, download_name="report.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    except Exception as e:
         return jsonify({"message": "An error occurred","error":str(e)}), 500
