@@ -5,7 +5,6 @@ import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 
 // third-party
-import ReactApexChart from 'react-apexcharts';
 
 // chart options
 const barChartOptions = {
@@ -74,7 +73,6 @@ export default function MonthlyBarChart() {
 
   return (
     <Box id="chart" sx={{ bgcolor: 'transparent' }}>
-      <ReactApexChart options={options} series={series} type="bar" height={365} />
     </Box>
   );
 }
