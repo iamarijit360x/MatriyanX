@@ -11,7 +11,8 @@ patient_schema = {
     'distance': {'type': 'integer', 'min': 0, 'required': True},
     'date': {'required': True},  # YYYY-MM-DD HH:MM:SS
     'amount': {'type': 'integer', 'min': 0, 'required': True},
-    'isEditing':{}
+    'isEditing':{},
+    'editable':{},
 }
 
 def validate_patient_data(data):

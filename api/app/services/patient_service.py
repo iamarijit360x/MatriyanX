@@ -5,15 +5,14 @@ from app.database import get_db,close_db
 from ..utils.utility import generate_patient_id
 
 class PatientService:
-    def create_patients(self, data_list, time_group,user_id):
+    def create_patients(self, data_list,user_id):
         db = get_db()
         try:
             # Prepare the data for bulk insertion
             entries_to_insert = [
                 (
-                    generate_patient_id([  data["name"],data["village"],data["date"],data["voucher_number"] ]), 
+                    generate_patient_id([ data["name"],data["village"],data["date"],data["voucher_number"] ]), 
                     data["serial_no"],  # serial_no
-                    time_group,  # time_group
                     data["name"],  # name
                     data["village"],  # village
                     data["district"],  # district
@@ -32,8 +31,8 @@ class PatientService:
 
             # Perform the bulk insertion using executemany
             db.executemany('''
-                INSERT INTO Patients (patient_id, serial_no, time_group, name, village, district, voucher_number, voucher_type, distance, date, amount, user_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO Patients (patient_id, serial_no, name, village, district, voucher_number, voucher_type, distance, date, amount, user_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', entries_to_insert)
         #     db.execute('''
         #     UPDATE Summary
@@ -81,20 +80,22 @@ class PatientService:
                 raise Exception(f"Database error: {e}")
             finally:
                 close_db(db)
-    def get_patients(self, user_id, time_group=''):
+    def get_patients(self, user_id, date_range=None):
         db = get_db()
         try:
             # Prepare the SQL query
             query = 'SELECT * FROM Patients WHERE user_id = ?'
-            
-            # If time_group is specified, add it to the query
-            if not(time_group==''):
-                query += ' AND time_group = ?'  # Assuming there is a 'time_group' column
-                params = (user_id, time_group)
+            params = [user_id]
+
+            # If date_range is specified, add it to the query
+            if date_range:
+                query += ' AND date BETWEEN ? AND ?'
+                params.extend([date_range['start_date'], date_range['end_date']])
             else:
-                params = (str(user_id))
+                # Default to the last 30 days if no date_range is provided
+                query += ' AND date >= DATE("now", "-30 days")'
+
             # Execute the query
-            print(query,params)
             cursor = db.execute(query, params)
             rows = cursor.fetchall()  # Fetch all results
             

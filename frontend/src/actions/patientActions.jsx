@@ -1,4 +1,5 @@
 import axiosInstance from "middlewares/axiosConfig";
+import { formatDateForSQL } from "utils/utils";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 export const createPatient  = async (patientData) => {
@@ -12,9 +13,9 @@ export const createPatient  = async (patientData) => {
   }
 };
 
-export const getAllPatients = async (timegroup) => {
+export const getAllPatients = async (startDate='',endDate='') => {
     try {
-        const response = await axiosInstance.get(apiUrl+`/patient?time_group=${timegroup}`)
+        const response = await axiosInstance.get(apiUrl+`/patient?start_date=${formatDateForSQL(startDate)}&end_date=${formatDateForSQL(endDate)}`);
         return response.data
     } catch (error) {
         console.error('An error occurred during creating patient:', error);
@@ -35,9 +36,9 @@ export const getAllPatients = async (timegroup) => {
   };
   
 
-  export const deletePatient  = async (patient_id,time_group) => {
+  export const deletePatient  = async (patient_id) => {
     try {
-      const response = await axiosInstance.delete(apiUrl+`/patient/${patient_id}?timegroup=${time_group}`)
+      const response = await axiosInstance.delete(apiUrl+`/patient/${patient_id}`)
       console.log(response)
    
     } catch (error) {

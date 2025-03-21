@@ -32,16 +32,20 @@ const defaultRow = {
   amount: '0'
 };
 
-export default function TableRecords({ timegroup, editable }) {
+export default function TableRecords() {
+  const editable = true;
   const [rows, setRows] = useState([{ ...defaultRow, isEditing: true }]); // Start with one editable row
   const [originalRows, setOriginalRows] = useState([]); // Keep a copy of the original data for comparison
   const [errors, setErrors] = useState(Array(rows.length).fill({}));
   const [error, setError] = useState(false);
   const totalAmount = rows.reduce((total, row) => total + parseFloat(row.amount) || 0, 0);
   const totalDistance = rows.reduce((total, row) => total + parseFloat(row.distance) || 0, 0);
-  const [year, month] = timegroup.split('-').map(Number);  // Extract year and month
-  const startDate = new Date(year, month - 1);                 // Start of the month
-  const endDate = new Date(year, month, 0);            // End of the month
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 120); // Last 30 days
+  const endDate = new Date(); // Today
+
+
   const [open, setOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [openQuickUpload, setOpenQuickUpload] = useState(false);
@@ -70,8 +74,8 @@ export default function TableRecords({ timegroup, editable }) {
         serial_no: rows.length + index + 1, // Serial number for each row
         name: item.name,
         village: item.village,
-        voucher_type:`V${item.voucher_type}`, // Assuming token corresponds to `voucher_type`
-        voucher_number: maxVoucherNumber+index+1, // Generate a voucher number
+        voucher_type: `V${item.voucher_type}`, // Assuming token corresponds to `voucher_type`
+        voucher_number: maxVoucherNumber + index + 1, // Generate a voucher number
         district: 'Burdwan', // Assuming default district
         distance: item.distance,
         date: new Date(format(new Date(item.date), 'MM/dd/yyyy')), // Format date to a JS Date object
@@ -87,32 +91,31 @@ export default function TableRecords({ timegroup, editable }) {
     }
   };
   const handleOpenDialog = (index) => {
-      setDeleteIndex(index);
-      setOpen(true);
+    setDeleteIndex(index);
+    setOpen(true);
   };
 
   const handleCloseDialog = () => {
-      setOpen(false);
-      setDeleteIndex(null);
+    setOpen(false);
+    setDeleteIndex(null);
   };
 
   const handleConfirmDelete = () => {
-      if (deleteIndex !== null) {
-          handleDeleteRow(deleteIndex);
-      }
-      handleCloseDialog();
+    if (deleteIndex !== null) {
+      handleDeleteRow(deleteIndex);
+    }
+    handleCloseDialog();
   };
   const fetchAndSetAllPatients = () => {
-    getAllPatients(timegroup).then((data) => {
+    getAllPatients(startDate, endDate).then((data) => {
       setRows(data);
       setOriginalRows(data); // Initialize original rows
     });
   }
 
   useEffect(() => {
-    if (timegroup) {
-      fetchAndSetAllPatients();
-    }
+    fetchAndSetAllPatients();
+
   }, []);
 
 
@@ -163,20 +166,20 @@ export default function TableRecords({ timegroup, editable }) {
   const handleAddRow = () => {
     const newSerialNo = rows.length > 0 ? Math.max(...rows.map(row => row.serial_no)) + 1 : 1;
     const newVoucherNumber = rows.length > 0 ? Math.max(...rows.map(row => parseInt(row.voucher_number, 10))) + 1 : 1;
-    setRows([...rows, { ...defaultRow, serial_no: newSerialNo, voucher_number: newVoucherNumber, isEditing: true }]);
+    setRows([...rows, { ...defaultRow, serial_no: newSerialNo, voucher_number: newVoucherNumber, isEditing: true, editable: '1' }]);
   };
 
   const handleDeleteRow = async (index) => {
- 
-    if(!!rows[index].patient_id){
 
-      
-      await deletePatient(rows[index].patient_id,timegroup);
+    if (!!rows[index].patient_id) {
+
+
+      await deletePatient(rows[index].patient_id);
       fetchAndSetAllPatients()
 
     }
     else setRows(rows.filter((_, i) => i !== index));
-   
+
   };
 
   const handleEditRow = (index) => {
@@ -190,7 +193,7 @@ export default function TableRecords({ timegroup, editable }) {
 
     // Check if both values are objects
     if (obj1 == null || obj2 == null || typeof obj1 !== 'object' || typeof obj2 !== 'object') {
-        return false;
+      return false;
     }
 
     // Get keys of both objects
@@ -202,21 +205,21 @@ export default function TableRecords({ timegroup, editable }) {
 
     // Check if all keys and values are equal
     for (let key of keys1) {
-        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
-            return false;
-        }
+      if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+        return false;
+      }
     }
 
     return true;
-}
+  }
 
-function hasChanged(obj1, obj2) {
+  function hasChanged(obj1, obj2) {
     // Remove 'isEditing' key from obj1 if it exists
     const { isEditing, ...filteredObj1 } = obj1;
 
     // Use deepEqual to compare filtered obj1 with obj2
     return !deepEqual(filteredObj1, obj2);
-}
+  }
 
 
   const handleSaveRow = async (index) => {
@@ -248,8 +251,8 @@ function hasChanged(obj1, obj2) {
       const newRows = rows.map((row, i) => (i === index ? { ...row, isEditing: false } : row));
       console.log(newRows)
       setRows(newRows);
-      if (isExisting && hasChanged(newRows[index],originalRows[index])) {
-        await editPatient({ patient: row, total_amount: totalAmount, total_distance: totalDistance, time_group: timegroup });
+      if (isExisting && hasChanged(newRows[index], originalRows[index])) {
+        await editPatient({ patient: row, total_amount: totalAmount, total_distance: totalDistance });
         fetchAndSetAllPatients();
       }
     }
@@ -266,7 +269,7 @@ function hasChanged(obj1, obj2) {
 
     const data = rows.filter(row => !row.patient_id);
     if (data.length) {
-      await createPatient({ patients: data, timegroup, total_amount: totalAmount, total_distance: totalDistance })
+      await createPatient({ patients: data, total_amount: totalAmount, total_distance: totalDistance })
       fetchAndSetAllPatients();
     }
   };
@@ -275,7 +278,7 @@ function hasChanged(obj1, obj2) {
 
   return (
     <>
-      <Typography sx={{ textAlign: 'center', paddingBlockEnd: '2%' }} variant="h3" color="textPrimary">Patients Data for {getMonthYear(timegroup)}</Typography>
+      <Typography sx={{ textAlign: 'center', paddingBlockEnd: '2%' }} variant="h3" color="textPrimary">Patients Data for {JSON.stringify(startDate.toLocaleDateString())} to {JSON.stringify(endDate.toLocaleDateString())}</Typography>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -288,10 +291,10 @@ function hasChanged(obj1, obj2) {
           <TableBody>
             {rows.map((row, index) => (
               <TableRow key={index} >
-                
+
                 {Object.keys(defaultRow).map((key) => (
                   <TableCell key={key} sx={{ padding: '5px', textAlign: 'center', borderColor: row?.patient_id ? '' : 'yellow' }}>
-                    
+
                     {row.isEditing ? (
                       key === 'voucher_type' ? (
                         <Select
@@ -362,6 +365,7 @@ function hasChanged(obj1, obj2) {
                               }
                             },
                           })}
+                          
                         />
                       )
                     ) : (
@@ -373,7 +377,7 @@ function hasChanged(obj1, obj2) {
                     )}
                   </TableCell>
                 ))}
-                {editable && <TableCell sx={{ display: 'flex', justifyContent: 'center' }}>
+                {editable && row.editable == '1' ? <TableCell sx={{ display: 'flex', justifyContent: 'center' }}>
                   {row.isEditing ? (
                     <IconButton onClick={() => handleSaveRow(index)}>
                       <SaveIcon />
@@ -392,26 +396,26 @@ function hasChanged(obj1, obj2) {
                     </IconButton>
                     <Dialog
                       open={open}
-                      onClose={()=>setOpen(false)}
+                      onClose={() => setOpen(false)}
                       aria-labelledby="responsive-dialog-title"
                     >
                       <DialogTitle id="responsive-dialog-title">
                         {" Are you sure you want to delete this row? This action cannot be undone."}
                       </DialogTitle>
                       <DialogContent>
-                  
+
                       </DialogContent>
                       <DialogActions>
-                        <Button autoFocus onClick={()=>setOpen(false)}>
+                        <Button autoFocus onClick={() => setOpen(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={()=>{handleDeleteRow(deleteIndex);setOpen(false)}} autoFocus>
-                          Delete 
+                        <Button onClick={() => { handleDeleteRow(deleteIndex); setOpen(false) }} autoFocus>
+                          Delete
                         </Button>
                       </DialogActions>
                     </Dialog>
-                </React.Fragment>
-                </TableCell>}
+                  </React.Fragment>
+                </TableCell> : <TableCell sx={{ display: 'flex', justifyContent: 'center' }}>Generated</TableCell>}
               </TableRow>
             ))}
             <TableRow>
@@ -430,39 +434,39 @@ function hasChanged(obj1, obj2) {
             Save All
           </Button>
           <Button onClick={handleOpenQuickUpload} startIcon={<AddIcon />} sx={{ marginTop: '10px' }}>
-        Quick Upload
-      </Button>
+            Quick Upload
+          </Button>
 
-      {/* Quick Upload Dialog */}
-      <Dialog open={openQuickUpload} onClose={handleCloseQuickUpload} maxWidth="md" fullWidth>
-  <DialogTitle>Quick Upload Patients</DialogTitle>
-  <DialogContent>
-    <TextField
-      label="Paste JSON array here"
-      placeholder='e.g., [{"name": "Deepali Lohar", "village": "Morsidpur", "token": "1", "distance": 22, "date": "1-8-24", "amount": 350.00}]'
-      multiline
-      rows={10}  // Increase the number of rows
-      fullWidth
-      variant="outlined"
-      value={jsonInput}
-      onChange={(e) => setJsonInput(e.target.value)}
-      sx={{
-        width: '100%',   // Full width of the dialog
-        height: '300px', // Custom height
-      }}
-    />
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={handleCloseQuickUpload} color="secondary">
-      Cancel
-    </Button>
-    <Button onClick={handleAddQuickUpload} color="primary">
-      Upload
-    </Button>
-  </DialogActions>
-</Dialog>
+          {/* Quick Upload Dialog */}
+          <Dialog open={openQuickUpload} onClose={handleCloseQuickUpload} maxWidth="md" fullWidth>
+            <DialogTitle>Quick Upload Patients</DialogTitle>
+            <DialogContent>
+              <TextField
+                label="Paste JSON array here"
+                placeholder='e.g., [{"name": "Deepali Lohar", "village": "Morsidpur", "token": "1", "distance": 22, "date": "1-8-24", "amount": 350.00}]'
+                multiline
+                rows={10}  // Increase the number of rows
+                fullWidth
+                variant="outlined"
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+                sx={{
+                  width: '100%',   // Full width of the dialog
+                  height: '300px', // Custom height
+                }}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseQuickUpload} color="secondary">
+                Cancel
+              </Button>
+              <Button onClick={handleAddQuickUpload} color="primary">
+                Upload
+              </Button>
+            </DialogActions>
+          </Dialog>
 
-          </>}
+        </>}
     </>
   );
 }

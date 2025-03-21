@@ -36,12 +36,9 @@ const MainRoutes = {
         },
         {
           path: 'history',
-          element: <History />
+          element:<Records />
         },
-        {
-          path: 'records/:timegroup',
-          element: <Records />
-        },
+        
         {
           path: 'account',
           element: <Account />

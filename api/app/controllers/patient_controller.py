@@ -18,16 +18,18 @@ def create_patient(user):
         obj={'error':error,'message':'Please Enter Valid Data'}
         return jsonify(str(obj)), 400
 
-    patient_service.create_patients(data,data['timegroup'],user['id'])
-    summary_service.update_summary(data['timegroup'],user['id'])
+    patient_service.create_patients(data,user['id'])
+    # summary_service.update_summary(data['timegroup'],user['id'])
     return jsonify({'status':'ok'}),200
 
 @auth_service.token_check
 def get_patients(user):
-    time_group =  request.args.get('time_group')
-    if(time_group==''):
-        return jsonify({"message":"Something Went Wrong","error":"Params Missing"}),400
-    data=patient_service.get_patients(user['id'],time_group)
+    start_date =  request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    date_range=None
+    if start_date and end_date:
+        date_range={"start_date":start_date,"end_date":end_date}
+    data=patient_service.get_patients(user['id'],date_range)
     return jsonify(data),200
 
 

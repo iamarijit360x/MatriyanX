@@ -16,7 +16,7 @@ export default function DashboardCards() {
   const navigate=useNavigate()
   useEffect(()=>{
     getAllSummaris()
-    .then((data)=> setData(data))
+    .then((data)=>{ setData(data);console.log(data)})
    
     
   },[])
@@ -24,7 +24,7 @@ export default function DashboardCards() {
 
   return (
     <Stack spacing={3} sx={{width:'80%'}}>
-      {data.map((item) => (
+      {data?.map((item) => (
         <Card key={item.id} sx={{ boxShadow: 3, padding: 2, borderRadius: 2 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Box>
