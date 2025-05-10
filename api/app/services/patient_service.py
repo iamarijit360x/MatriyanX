@@ -3,15 +3,16 @@ from functools import wraps
 import sqlitecloud
 from app.database import get_db,close_db
 from ..utils.utility import generate_patient_id
-
+from datetime import datetime
 class PatientService:
-    def create_patients(self, data_list,user_id):
+    def create_patients(self, data_list, user_id):
         db = get_db()
         try:
             # Prepare the data for bulk insertion
+            print(data_list)
             entries_to_insert = [
                 (
-                    generate_patient_id([ data["name"],data["village"],data["date"],data["voucher_number"] ]), 
+                    generate_patient_id([data["name"], data["village"], data["date"], data["voucher_number"]]), 
                     data["serial_no"],  # serial_no
                     data["name"],  # name
                     data["village"],  # village
@@ -19,7 +20,8 @@ class PatientService:
                     data["voucher_number"],  # voucher_number
                     data["voucher_type"],  # voucher_type
                     data["distance"],  # distance
-                    data["date"],  # date
+                    # Ensure the date is in DATETIME format 'YYYY-MM-DD HH:MM:SS'
+                     datetime.strptime(data["date"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d %H:%M:%S"),  # date
                     data["amount"],  # amount
                     user_id  # user_id
                 )
@@ -27,32 +29,30 @@ class PatientService:
             ]
 
             # Print each entry being inserted for verification
-
+            for entry in entries_to_insert:
+                print(entry)
 
             # Perform the bulk insertion using executemany
             db.executemany('''
                 INSERT INTO Patients (patient_id, serial_no, name, village, district, voucher_number, voucher_type, distance, date, amount, user_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', entries_to_insert)
-        #     db.execute('''
-        #     UPDATE Summary
-        #     SET total_amount = ?, distance = ?
-        #     WHERE user_id = ? AND time_group = ?
-        # ''', (data_list['total_amount'], data_list['total_distance'], user_id, data_list['time_group']))
-            
+
             db.commit()  # Commit after inserting all entries
 
         except sqlitecloud.IntegrityError as e:
             db.rollback()
             raise ValueError(f"Integrity error: {e}")
         except sqlitecloud.Error as e:
+            print(e)
             db.rollback()
             raise Exception(f"Database error: {e}")
         finally:
             close_db(db)
 
-   
-    
+
+
+
     def edit_patient(self, updated_data,user_id):
             db = get_db()
             print(updated_data)
@@ -89,8 +89,13 @@ class PatientService:
 
             # If date_range is specified, add it to the query
             if date_range:
+                start_date = date_range['start_date'] + ' 00:00:00'
+                end_date = date_range['end_date'] + ' 23:59:59'
                 query += ' AND date BETWEEN ? AND ?'
-                params.extend([date_range['start_date'], date_range['end_date']])
+                params.extend([start_date, end_date])
+                print("QUERY:", query)
+                print("PARAMS:", params)
+
             else:
                 # Default to the last 30 days if no date_range is provided
                 query += ' AND date >= DATE("now", "-30 days")'
